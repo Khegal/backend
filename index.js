@@ -3,7 +3,7 @@ import authRouter from "./authRouter.js";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 
-dotenv.config({ path: ".env.local" });
+dotenv.config({ path: ".env" });
 
 const PORT = process.env.PORT || 3333;
 const app = express();

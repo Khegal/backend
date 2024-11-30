@@ -6,35 +6,55 @@ const router = express.Router();
 const saltRounds = 10;
 
 router.post("/signup", async (req, res) => {
-  try {
-    const { userName, email, password } = req.body;
-    const existingUser = await UserModel.findOne({ email });
-    if (existingUser) {
-      return res.status(409).send({ message: "User already exists" });
-    }
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
-    const newUser = await UserModel.create({
-      email,
-      password: hashedPassword,
-      userName,
-    });
-    return res
-      .status(201)
-      .send({ message: "User created successfully", user: newUser });
-  } catch (error) {
-    return res
-      .status(500)
-      .send({ message: "An error occurred", error: error.message });
+  const { credential, password, fullName, userName } = req.body;
+
+  if (!credential || credential === "") {
+    return res.status(400).send({ message: "Email or Phone required!" });
   }
+  if (!password || password === "") {
+    return res.status(400).send({ message: "Password required!" });
+  }
+  if (!fullName || fullName === "") {
+    return res.status(400).send({ message: "Fullname required!" });
+  }
+  if (!userName || userName === "") {
+    return res.status(400).send({ message: "Username required!" });
+  }
+
+  const existingUser = await UserModel.findOne({
+    $or: [{ email: credential }, { phone: credential }],
+  });
+
+  if (existingUser)
+    return res
+      .status(400)
+      .send({ message: "Email or Phone already registered!" });
+
+  bcrypt.hash(password, saltRounds, async function (err, hash) {
+    const newUser = {
+      email: credential.includes("@") ? credential : "",
+      phone: credential.includes("@") ? "" : credential,
+      password: hash,
+      fullName,
+      userName,
+    };
+
+    await UserModel.create(newUser);
+    return res.status(201).send({ message: "User registered successfully" });
+  });
 });
 
-router.post("/login", async (req, res) => {
+router.post("/signin", async (req, res) => {
   try {
-    const { email, password } = req.body;
-    const user = await UserModel.findOne({ email });
+    const { credential, password } = req.body;
+    const user = await UserModel.findOne({
+      $or: [{ email: credential }, { phone: credential }],
+    });
+
     if (!user) {
       return res.status(404).send({ message: "User not found" });
     }
+
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
       return res.status(400).send({ message: "Incorrect password" });
