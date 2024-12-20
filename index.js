@@ -1,6 +1,7 @@
 import express from "express";
 import authRouter from "./router/authRouter.js";
 import postRouter from "./router/postRouter.js";
+import fileRouter from "./router/fileRouter.js";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cors from "cors";
@@ -14,6 +15,7 @@ app.use(cors());
 app.use(express.json());
 app.use("/users", authRouter);
 app.use("/posts", postRouter);
+app.use("/fileUpload", fileRouter);
 
 app.listen(PORT, async () => {
   try {

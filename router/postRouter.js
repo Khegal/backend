@@ -13,14 +13,10 @@ router.post("/createPost", async (req, res) => {
     console.log(error);
   }
 });
-router.get("/retrievePosts", async (req, res) => {
-  try {
-    const posts = await PostModel.find();
-    res.status(200).send(posts);
-  } catch (error) {
-    console.error(error);
-    res.status(500).send({ message: "Failed to retrieve posts" });
-  }
+
+router.get("/", async (req, res) => {
+  const posts = await PostModel.find({}).sort({ createdAt: -1 });
+  return res.send(posts);
 });
 
 export default router;
