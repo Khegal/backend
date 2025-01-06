@@ -100,8 +100,9 @@ router.post("/signin", async (req, res) => {
     if (!passwordMatch) {
       return res.status(400).send({ message: "Invalid credentials!" });
     }
+
     const accessToken = jwt.sign(
-      { userId: existingUser._id },
+      { user: existingUser },
       process.env.JWT_SECRET,
       {
         expiresIn: "10h",
@@ -117,35 +118,13 @@ router.post("/signin", async (req, res) => {
 });
 
 router.get("/me", authMiddleware, (req, res) => {
-  return res.status(200).send({ user: req.user });
+  return res.status(200).send(req.user);
 });
 
-router.post("/me", authMiddleware, async (req, res) => {
-  try {
-    const { fullname } = req.body;
-    if (!fullname) {
-      return res.status(400).send({ message: "Fullname is required!" });
-    }
-
-    const updatedUser = await UserModel.findByIdAndUpdate(
-      req.user._id,
-      { fullname },
-      { new: true }
-    );
-
-    return res.status(200).send({
-      message: "User updated successfully!",
-      user: {
-        id: updatedUser._id,
-        username: updatedUser.username,
-        fullname: updatedUser.fullname,
-      },
-    });
-  } catch (error) {
-    return res
-      .status(500)
-      .send({ message: "Update failed!", error: error.message });
-  }
+router.get("/:username", async (req, res) => {
+  const { username } = req.params;
+  const user = await UserModel.findOne({ username });
+  return res.send(user);
 });
 
 export default router;
