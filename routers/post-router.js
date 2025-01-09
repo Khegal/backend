@@ -9,6 +9,7 @@ const router = express.Router();
 router.get("/", async (req, res) => {
   const posts = await PostModel.find({})
     .populate("user", "profileUrl username")
+    .populate("likes")
     .populate({
       path: "comments",
       populate: {
