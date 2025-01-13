@@ -9,19 +9,19 @@ const router = express.Router();
 router.get("/", async (req, res) => {
   try {
     const posts = await PostModel.find({})
-      .populate("user", "profileUrl username") // Populating the user for the post
+      .populate("user", "profileUrl username")
       .populate({
-        path: "likes", // Populating the likes (if likes is a subdocument with a reference to the User)
+        path: "likes",
         populate: {
-          path: "user", // The 'user' field within 'likes' that references a User
-          select: "profileUrl username", // Only select the relevant fields
+          path: "user",
+          select: "profileUrl username",
         },
       })
       .populate({
-        path: "comments", // Populate the comments
+        path: "comments",
         populate: {
-          path: "user", // The 'user' field within each comment that references a User
-          select: "profileUrl username", // Only select the relevant fields
+          path: "user",
+          select: "profileUrl username",
         },
       })
       .sort({ createdAt: -1 });
@@ -48,6 +48,7 @@ router.get("/user/:_id", async (req, res) => {
   try {
     const { _id } = req.params;
     const posts = await PostModel.find({ user: _id });
+
     return res.send(posts);
   } catch {
     return res
@@ -66,6 +67,8 @@ router.post("/:postId/comments", authMiddleware, async (req, res) => {
       post: postId,
       user: user._id,
     });
+
+    await PostModel.findByIdAndUpdate(postId, { $inc: { commentCount: 1 } });
 
     return res.send(newComment);
   } catch (err) {
@@ -106,30 +109,6 @@ router.post("/:postId/like", authMiddleware, async (req, res) => {
     return res
       .status(500)
       .json({ message: "Server can't handle that request" });
-  }
-});
-
-router.get("/:postId/liked_by", authMiddleware, async (req, res) => {
-  try {
-    const { postId } = req.params;
-
-    // Find the likes for the given post and populate the user details
-    const likes = await LikeModel.find({ post: postId }).populate(
-      "user",
-      "username profileUrl"
-    );
-
-    if (!likes || likes.length === 0) {
-      return res.status(404).json({ error: "No likes found for this post" });
-    }
-
-    // Map the users from the likes
-    const likedByUsers = likes.map((like) => like.user);
-
-    res.status(200).json(likedByUsers);
-  } catch (error) {
-    console.error("Error fetching liked users:", error);
-    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 

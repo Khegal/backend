@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import authRouter from "./routers/auth-router.js";
 import postRouter from "./routers/post-router.js";
 import fileRouter from "./routers/file-router.js";
+import userRouter from "./routers/user-router.js";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -17,6 +18,7 @@ app.use(cors());
 app.use("/api/auth", authRouter);
 app.use("/api/posts", postRouter);
 app.use("/api/files", fileRouter);
+app.use("/api/user", userRouter);
 
 app.listen(PORT, async () => {
   await mongoose.connect(process.env.DATABASE_URL);

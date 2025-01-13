@@ -3,7 +3,6 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import UserModel from "../models/user-model.js";
-import { authMiddleware } from "../middlewares/auth-middleware.js";
 
 dotenv.config();
 
@@ -138,16 +137,6 @@ router.post("/signin", async (req, res) => {
       .status(500)
       .send({ message: "Signin failed!", error: error.message });
   }
-});
-
-router.get("/me", authMiddleware, (req, res) => {
-  return res.status(200).send(req.user);
-});
-
-router.get("/:username", async (req, res) => {
-  const { username } = req.params;
-  const user = await UserModel.findOne({ username });
-  return res.send(user);
 });
 
 export default router;
