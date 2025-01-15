@@ -1,7 +1,12 @@
 import express from "express";
-import { authMiddleware } from "../middlewares/auth-middleware.js";
-import FollowModel from "../models/follow-model.js";
 import UserModel from "../models/user-model.js";
+import FollowModel from "../models/follow-model.js";
+import { authMiddleware } from "../middlewares/auth-middleware.js";
+import { nanoid } from "nanoid";
+import { v2 as cloudinary } from "cloudinary";
+import multer from "multer";
+import dotenv from "dotenv";
+dotenv.config();
 
 const router = express.Router();
 
@@ -27,6 +32,56 @@ router.get("/me", authMiddleware, async (req, res) => {
   } catch (err) {
     console.error("Error fetching user data:", err);
     return res.status(500).json({ message: "Server error" });
+  }
+});
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDNARY_NAME,
+  api_key: process.env.CLOUDNARY_API_KEY,
+  api_secret: process.env.CLOUDNARY_API_SECRET,
+});
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "./images/");
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = `${nanoid()}-${file.originalname}`;
+    cb(null, uniqueName);
+  },
+});
+
+const upload = multer({ storage });
+
+router.use(upload.single("file"));
+
+router.get("/:username", async (req, res) => {
+  const { username } = req.params;
+  const user = await UserModel.findOne({ username })
+    .populate("posts")
+    .populate("followers")
+    .populate("followings");
+  return res.send(user);
+});
+
+router.post("/:username/image", authMiddleware, async (req, res) => {
+  const username = req.params.username;
+  const currentUsername = req.user.username;
+
+  if (username !== currentUsername)
+    return res
+      .status(403)
+      .send({ message: "You cant't change other user profile" });
+
+  try {
+    const response = await cloudinary.uploader.upload(req.file.path);
+    const profileUrl = response.secure_url;
+    await UserModel.updateOne({ username }, { profileUrl });
+    return res.send({ message: "Updated success!", profileUrl });
+  } catch (err) {
+    return res.status(500).send({
+      message: "Failed to upload!",
+    });
   }
 });
 
